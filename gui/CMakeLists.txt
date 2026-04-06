@@ -4,7 +4,8 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets Multimedia MultimediaWidgets Network)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network)
+find_package(Qt6 COMPONENTS Multimedia MultimediaWidgets QUIET)
 
 set(GUI_SOURCES
     src/main.cpp
@@ -34,11 +35,19 @@ add_executable(surveillance_gui WIN32
 
 target_link_libraries(surveillance_gui PRIVATE
     surveillance_common
+    Qt6::Core
+    Qt6::Gui
     Qt6::Widgets
-    Qt6::Multimedia
-    Qt6::MultimediaWidgets
     Qt6::Network
 )
+
+if(TARGET Qt6::Multimedia)
+    target_link_libraries(surveillance_gui PRIVATE Qt6::Multimedia)
+    target_compile_definitions(surveillance_gui PRIVATE HAS_QT_MULTIMEDIA=1)
+endif()
+if(TARGET Qt6::MultimediaWidgets)
+    target_link_libraries(surveillance_gui PRIVATE Qt6::MultimediaWidgets)
+endif()
 
 # Link gRPC if available (for cluster communication)
 if(TARGET surveillance_proto)

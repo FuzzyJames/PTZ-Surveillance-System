@@ -1,6 +1,7 @@
 add_library(surveillance_common STATIC
     src/config.cpp
     src/logging.cpp
+    src/onvif_client.cpp
 )
 
 target_include_directories(surveillance_common PUBLIC
@@ -16,4 +17,9 @@ endif()
 
 if(nlohmann_json_FOUND)
     target_link_libraries(surveillance_common PUBLIC nlohmann_json::nlohmann_json)
+endif()
+
+# Platform libraries for ONVIF HTTP client
+if(WIN32)
+    target_link_libraries(surveillance_common PUBLIC winhttp)
 endif()

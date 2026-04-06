@@ -10,10 +10,16 @@ option(BUILD_GUI "Build the Windows GUI application" ON)
 option(BUILD_SERVICES "Build cluster microservices" OFF)
 option(BUILD_TESTS "Build unit tests" OFF)
 
-# ---- vcpkg integration (auto-detected if VCPKG_ROOT is set) ----
-if(DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-    set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
-        CACHE STRING "Vcpkg toolchain file")
+# ---- vcpkg integration ----
+# Auto-detect vcpkg: check VCPKG_ROOT env var, then known install locations
+if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+    if(DEFINED ENV{VCPKG_ROOT})
+        set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+            CACHE STRING "Vcpkg toolchain file")
+    elseif(EXISTS "C:/Users/matta/source/vcpkg/vcpkg-master/scripts/buildsystems/vcpkg.cmake")
+        set(CMAKE_TOOLCHAIN_FILE "C:/Users/matta/source/vcpkg/vcpkg-master/scripts/buildsystems/vcpkg.cmake"
+            CACHE STRING "Vcpkg toolchain file")
+    endif()
 endif()
 
 # ---- Find common dependencies ----
@@ -42,6 +48,10 @@ endif()
 if(BUILD_GUI)
     add_subdirectory(gui)
 endif()
+
+# ---- Test executables (always available) ----
+add_executable(test_onvif tests/test_onvif.cpp)
+target_link_libraries(test_onvif PRIVATE surveillance_common)
 
 message(STATUS "============================================")
 message(STATUS "  Surveillance System v${PROJECT_VERSION}")
