@@ -58,7 +58,7 @@ spec:
         app: ai-detect
     spec:
       nodeSelector:
-        kubernetes.io/hostname: nano
+        kubernetes.io/hostname: nano-desktop
       containers:
         - name: ai-detect
           image: surveillance-ai:latest
