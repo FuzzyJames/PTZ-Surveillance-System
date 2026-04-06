@@ -1,0 +1,66 @@
+# Build directories
+build/
+out/
+cmake-build-*/
+x64/
+x86/
+Debug/
+Release/
+MinSizeRel/
+RelWithDebInfo/
+
+# Visual Studio
+.vs/
+*.vcxproj.user
+*.suo
+*.sdf
+*.opensdf
+*.db
+*.opendb
+*.ipch
+*.aps
+*.ncb
+*.obj
+*.pdb
+*.ilk
+*.exe
+*.dll
+*.lib
+*.exp
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+CTestTestfile.cmake
+
+# vcpkg
+vcpkg_installed/
+
+# Generated protobuf/gRPC files
+proto/*.pb.h
+proto/*.pb.cc
+proto/*.grpc.pb.h
+proto/*.grpc.pb.cc
+
+# IDE
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# OS
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Docker
+*.tar
+
+# TensorRT engine files (large, rebuilt per-device)
+services/ai_detect/models/*.engine
+
+# Logs (tracked separately)
+*.log

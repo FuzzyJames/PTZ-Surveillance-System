@@ -1,0 +1,33 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: wdpurple-pv
+  labels:
+    type: local
+    storage: wdpurple
+spec:
+  capacity:
+    storage: 2Ti
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: wdpurple
+  # The WD Purple drive should be physically connected to Pi2 (cluster2)
+  # and mounted at /mnt/wdpurple, then NFS-exported to other nodes.
+  nfs:
+    server: 192.168.0.240  # Pi2 - cluster2
+    path: /mnt/wdpurple
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wdpurple-pvc
+  namespace: surveillance
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: wdpurple
+  resources:
+    requests:
+      storage: 2Ti

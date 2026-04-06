@@ -1,0 +1,23 @@
+{
+  "name": "surveillance-system",
+  "version": "1.0.0",
+  "description": "PTZ Camera Surveillance System with AI Detection",
+  "dependencies": [
+    {
+      "name": "qt6",
+      "features": ["widgets", "multimedia", "network"],
+      "platform": "windows"
+    },
+    "grpc",
+    "protobuf",
+    {
+      "name": "ffmpeg",
+      "features": ["avcodec", "avformat", "avutil", "swscale"],
+      "default-features": false
+    },
+    "spdlog",
+    "nlohmann-json",
+    "sdl2",
+    "libdatachannel"
+  ]
+}

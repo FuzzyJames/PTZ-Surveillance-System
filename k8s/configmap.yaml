@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: surveillance-config
+  namespace: surveillance
+data:
+  CAMERA_ONVIF_ENDPOINT: "http://192.168.0.58:8080/onvif/device_service"
+  CAMERA_USERNAME: "admin"
+  STORAGE_BASE_PATH: "/mnt/wdpurple"
+  VIDEO_PATH: "/mnt/wdpurple/video"
+  LOG_PATH: "/mnt/wdpurple/logs"
+  MAX_LOG_SIZE_MB: "1024"
+  NORMAL_FPS: "10"
+  DETECTION_FPS: "60"
+  RTP_MULTICAST_ADDR: "239.0.0.1"
+  RTP_VIDEO_PORT: "5004"
+  RTP_AI_PORT: "5006"
+  NODE_INGEST: "192.168.0.218"
+  NODE_STORAGE: "192.168.0.240"
+  NODE_PTZ: "192.168.0.90"
+  NODE_STREAM: "192.168.0.10"
+  NODE_AI: "192.168.0.207"

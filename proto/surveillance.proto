@@ -1,0 +1,281 @@
+syntax = "proto3";
+
+package surveillance;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// ============================================================================
+// Common types
+// ============================================================================
+
+message BoundingBox {
+    float x = 1;      // top-left x (normalized 0-1)
+    float y = 2;      // top-left y (normalized 0-1)
+    float width = 3;  // width (normalized 0-1)
+    float height = 4; // height (normalized 0-1)
+}
+
+message FrameMetadata {
+    uint64 frame_id = 1;
+    google.protobuf.Timestamp timestamp = 2;
+    uint32 width = 3;
+    uint32 height = 4;
+}
+
+// ============================================================================
+// Detection types
+// ============================================================================
+
+enum DetectionType {
+    DETECTION_UNKNOWN = 0;
+    DETECTION_PERSON = 1;
+    DETECTION_VEHICLE = 2;
+}
+
+enum VehicleType {
+    VEHICLE_UNKNOWN = 0;
+    VEHICLE_CAR = 1;
+    VEHICLE_TRUCK = 2;
+    VEHICLE_SUV = 3;
+    VEHICLE_VAN = 4;
+    VEHICLE_MOTORCYCLE = 5;
+    VEHICLE_BUS = 6;
+}
+
+message Detection {
+    DetectionType type = 1;
+    float confidence = 2;
+    BoundingBox bbox = 3;
+    google.protobuf.Timestamp timestamp = 4;
+
+    // Vehicle-specific fields
+    VehicleType vehicle_type = 10;
+    string license_plate = 11;
+    string travel_direction = 12;
+    string owner_info = 13;
+
+    // Person-specific fields
+    string person_description = 20;
+    string linked_video_path = 21;
+}
+
+message DetectionEvent {
+    repeated Detection detections = 1;
+    FrameMetadata frame = 2;
+    bool person_present = 3;
+}
+
+// ============================================================================
+// PTZ Control
+// ============================================================================
+
+enum PtzMode {
+    PTZ_MANUAL = 0;
+    PTZ_PATROL = 1;
+    PTZ_TRACK = 2;
+}
+
+message PtzMoveRequest {
+    float pan_speed = 1;   // -1.0 to 1.0 (left/right)
+    float tilt_speed = 2;  // -1.0 to 1.0 (down/up)
+    float zoom_speed = 3;  // -1.0 to 1.0 (out/in)
+}
+
+message PtzModeRequest {
+    PtzMode mode = 1;
+}
+
+message PtzTrackTarget {
+    BoundingBox target_bbox = 1;
+    FrameMetadata frame = 2;
+}
+
+message PtzStatus {
+    PtzMode current_mode = 1;
+    float pan_position = 2;
+    float tilt_position = 3;
+    float zoom_level = 4;
+}
+
+// ============================================================================
+// Stream control
+// ============================================================================
+
+message StreamConfig {
+    string rtsp_url = 1;
+    uint32 target_fps = 2;
+    uint32 width = 3;
+    uint32 height = 4;
+}
+
+message StreamHealth {
+    bool is_active = 1;
+    uint32 current_fps = 2;
+    uint64 frames_received = 3;
+    uint64 frames_dropped = 4;
+    double latency_ms = 5;
+}
+
+// ============================================================================
+// Storage
+// ============================================================================
+
+enum RecordingMode {
+    RECORDING_NORMAL = 0;     // 10fps
+    RECORDING_DETECTION = 1;  // 60fps
+}
+
+message RecordingModeRequest {
+    RecordingMode mode = 1;
+    string detection_name = 2;  // human-readable name for detection clips
+}
+
+message StorageStatus {
+    uint64 total_bytes = 1;
+    uint64 used_bytes = 2;
+    uint64 available_bytes = 3;
+    string current_recording_path = 4;
+    RecordingMode current_mode = 5;
+}
+
+message PlaybackRequest {
+    string date = 1;       // YYYY-MM-DD
+    uint32 hour = 2;       // 0-23, for hourly segment
+    string filename = 3;   // specific file, or empty for listing
+}
+
+message PlaybackFileList {
+    repeated string files = 1;
+    repeated string detection_files = 2;
+}
+
+message VideoChunk {
+    bytes data = 1;
+    uint64 offset = 2;
+    bool is_last = 3;
+}
+
+message ClipExportRequest {
+    string source_file = 1;
+    google.protobuf.Timestamp start_time = 2;
+    google.protobuf.Timestamp end_time = 3;
+}
+
+// ============================================================================
+// Log
+// ============================================================================
+
+message LogEntry {
+    string id = 1;
+    google.protobuf.Timestamp timestamp = 2;
+    DetectionType type = 3;
+    string message = 4;
+    string linked_video = 5;
+    Detection detection = 6;
+}
+
+message LogQuery {
+    uint32 limit = 1;         // max entries to return
+    uint64 offset = 2;        // pagination offset
+    string search_term = 3;   // text search filter
+    string date_filter = 4;   // YYYY-MM-DD filter
+}
+
+message LogResponse {
+    repeated LogEntry entries = 1;
+    uint64 total_count = 2;
+}
+
+// ============================================================================
+// Latency metrics
+// ============================================================================
+
+message LatencyReport {
+    double camera_to_cluster_ms = 1;
+    double cluster_processing_ms = 2;
+    double cluster_to_gui_ms = 3;
+    double total_ms = 4;
+    google.protobuf.Timestamp measured_at = 5;
+}
+
+// ============================================================================
+// Service definitions
+// ============================================================================
+
+service IngestService {
+    // Configure the camera stream
+    rpc ConfigureStream(StreamConfig) returns (google.protobuf.Empty);
+    // Get stream health metrics
+    rpc GetStreamHealth(google.protobuf.Empty) returns (StreamHealth);
+    // Get current RTSP URL from ONVIF discovery
+    rpc DiscoverCamera(google.protobuf.Empty) returns (StreamConfig);
+}
+
+service AiDetectionService {
+    // Enable or disable AI processing
+    rpc SetEnabled(AiEnableRequest) returns (google.protobuf.Empty);
+    // Get current detection status
+    rpc GetStatus(google.protobuf.Empty) returns (AiStatus);
+    // Stream detection events in real-time
+    rpc StreamDetections(google.protobuf.Empty) returns (stream DetectionEvent);
+}
+
+message AiEnableRequest {
+    bool enabled = 1;
+}
+
+message AiStatus {
+    bool enabled = 1;
+    uint32 detections_per_second = 2;
+    double inference_time_ms = 3;
+    string model_name = 4;
+}
+
+service PtzControlService {
+    // Send manual move command
+    rpc Move(PtzMoveRequest) returns (google.protobuf.Empty);
+    // Stop all movement
+    rpc Stop(google.protobuf.Empty) returns (google.protobuf.Empty);
+    // Set PTZ operating mode
+    rpc SetMode(PtzModeRequest) returns (google.protobuf.Empty);
+    // Update tracking target (called by AI service)
+    rpc UpdateTrackTarget(PtzTrackTarget) returns (google.protobuf.Empty);
+    // Get current PTZ status
+    rpc GetStatus(google.protobuf.Empty) returns (PtzStatus);
+}
+
+service StorageService {
+    // Set recording mode (normal 10fps / detection 60fps)
+    rpc SetRecordingMode(RecordingModeRequest) returns (google.protobuf.Empty);
+    // Get storage status
+    rpc GetStorageStatus(google.protobuf.Empty) returns (StorageStatus);
+    // List available recordings for a date
+    rpc ListRecordings(PlaybackRequest) returns (PlaybackFileList);
+    // Stream a recorded video file
+    rpc StreamRecording(PlaybackRequest) returns (stream VideoChunk);
+    // Export a clip
+    rpc ExportClip(ClipExportRequest) returns (stream VideoChunk);
+}
+
+service LogService {
+    // Query log entries
+    rpc QueryLogs(LogQuery) returns (LogResponse);
+    // Stream log entries in real-time
+    rpc StreamLogs(google.protobuf.Empty) returns (stream LogEntry);
+    // Write a log entry (called by AI service)
+    rpc WriteLog(LogEntry) returns (google.protobuf.Empty);
+}
+
+service StreamGatewayService {
+    // Get stream endpoint info for live view
+    rpc GetLiveStreamEndpoint(google.protobuf.Empty) returns (LiveStreamInfo);
+    // Get latency metrics
+    rpc GetLatencyMetrics(google.protobuf.Empty) returns (LatencyReport);
+}
+
+message LiveStreamInfo {
+    string webrtc_offer_url = 1;
+    string rtp_address = 2;
+    uint32 rtp_port = 3;
+}
